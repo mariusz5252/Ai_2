@@ -1,17 +1,27 @@
 package org.example;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import org.example.dto.LlmModel;
+import org.example.dto.request.Message;
+import org.example.service.LlmClient;
+
+import java.io.IOException;
+import java.util.List;
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, InterruptedException {
         //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
         // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        LlmClient llm = new LlmClient("https://api.mistral.ai",
+                System.getenv("API_KEY"),
+                LlmModel.MISTRAL_LARGE_3.getModelName()
+        );
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-        }
+        String answer = llm.chat(List.of(
+                        new Message("system", "your are president"),
+                        new Message("user", "hello")
+                )
+        );
+
+        System.out.println(answer);
     }
 }
