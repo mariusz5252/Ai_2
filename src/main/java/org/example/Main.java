@@ -2,6 +2,7 @@ package org.example;
 
 import org.example.dto.LlmModel;
 import org.example.dto.request.Message;
+import org.example.dto.response.ChatResult;
 import org.example.service.LlmClient;
 
 import java.io.IOException;
@@ -13,15 +14,15 @@ public class Main {
         // to see how IntelliJ IDEA suggests fixing it.
         LlmClient llm = new LlmClient("https://api.mistral.ai",
                 System.getenv("API_KEY"),
-                LlmModel.MISTRAL_LARGE_3.getModelName()
+                LlmModel.MISTRAL_LARGE_3
         );
 
-        String answer = llm.chat(List.of(
+        ChatResult answer = llm.chat(List.of(
                         new Message("system", "your are president"),
                         new Message("user", "hello")
                 )
         );
 
-        System.out.println(answer);
+        System.out.println(answer.getContent());
     }
 }

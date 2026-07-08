@@ -2,11 +2,15 @@ package org.example.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.example.dto.LlmModel;
 import org.example.dto.request.ChatRequest;
 import org.example.dto.request.Message;
 import org.example.dto.response.ChatResponse;
+import org.example.dto.response.ChatResult;
+import org.example.dto.response.Usage;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,13 +21,13 @@ import java.util.List;
 public class LlmClient {
     private final String baseUrl;
     private final String apiKey;
-    private final String model;
+    private final LlmModel model;
 
     private HttpClient httpClient = HttpClient.newHttpClient();
     private ObjectMapper json = new ObjectMapper();
 
-    public String chat(List<Message> messages) throws IOException, InterruptedException {
-        String body = json.writeValueAsString(new ChatRequest(model, messages));
+    public ChatResult chat(List<Message> messages) throws IOException, InterruptedException {
+        String body = json.writeValueAsString(new ChatRequest(model.getModelName(), messages));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/v1/chat/completions"))
@@ -38,6 +42,23 @@ public class LlmClient {
         }
 
         ChatResponse chatParsedResponse = json.readValue(response.body(), ChatResponse.class);
-        return chatParsedResponse.getChoices().get(0).getMessage().getContent();
+        Usage usage = chatParsedResponse.getUsage();
+        String content = chatParsedResponse.getChoices().get(0).getMessage().getContent();
+        BigDecimal cost = calculateCost(usage);
+
+        System.out.println("[usage tokens] input=" + usage.getPrompt_tokens() + " output=" + usage.getCompletion_tokens() + " cost= " + cost + " $");
+
+        return new ChatResult(content, usage);
+    }
+
+    private BigDecimal calculateCost(Usage usage) {
+        BigDecimal inputCost = BigDecimal.valueOf(usage.getPrompt_tokens())
+                .multiply(BigDecimal.valueOf(model.getPriceInput()));
+
+        BigDecimal outputCost = BigDecimal.valueOf(usage.getCompletion_tokens())
+                .multiply(BigDecimal.valueOf(model.getPriceOutput()));
+
+        return inputCost.add(outputCost)
+                .divide(BigDecimal.valueOf(1_000_000));
     }
 }
